@@ -6,9 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
- * Represents a client with their loan outstanding / receivable amount.
+ * Represents a client with their loan outstanding / receivable amount and margin trading limit details.
  */
 @Entity
 @Table(name = "clients")
@@ -47,4 +48,28 @@ public class Client {
      */
     @Column(name = "trigger_margin_pct", nullable = false, precision = 5, scale = 2)
     private BigDecimal triggerMarginPct;
+
+    /** Client PAN number. */
+    @Column(name = "client_pan", length = 20)
+    private String clientPan;
+
+    /** Client mobile number. */
+    @Column(name = "client_mobile_number", length = 20)
+    private String clientMobileNumber;
+
+    /** Approved margin trading limit sanctioned to the client. */
+    @Column(name = "approved_margin_trading_limit", precision = 18, scale = 2)
+    private BigDecimal approvedMarginTradingLimit;
+
+    /** Approved loan limit sanctioned to the client. */
+    @Column(name = "approved_loan_limit", precision = 18, scale = 2)
+    private BigDecimal approvedLoanLimit;
+
+    /** Date when the margin trading limit was approved. */
+    @Column(name = "limit_approved_date")
+    private LocalDate limitApprovedDate;
+
+    /** Date when the margin trading limit expires. */
+    @Column(name = "limit_expiry_date")
+    private LocalDate limitExpiryDate;
 }

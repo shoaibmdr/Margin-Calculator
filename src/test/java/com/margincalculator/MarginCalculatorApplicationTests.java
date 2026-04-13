@@ -32,10 +32,14 @@ class MarginCalculatorApplicationTests {
     private PledgeClientwiseInventoryRepository pledgeInventoryRepository;
 
     @Autowired
+    private MarginMonitoringSnapshotRepository snapshotRepository;
+
+    @Autowired
     private MarginCalculationService marginCalculationService;
 
     @BeforeEach
     void setUp() {
+        snapshotRepository.deleteAll();
         pledgeInventoryRepository.deleteAll();
         clientwiseInventoryRepository.deleteAll();
         clientRepository.deleteAll();
@@ -48,8 +52,7 @@ class MarginCalculatorApplicationTests {
     @Test
     void testHealthyStatus() {
         // Total MV = 1_000_000, Loan = 400_000 → equity = 600_000 → 60% ≥ 50% initialMargin
-        clientRepository.save(new Client("H001", "Healthy Client",
-                bd("400000"), bd("50"), bd("40"), bd("30")));
+        clientRepository.save(client("H001", "Healthy Client", "400000"));
         clientwiseInventoryRepository.save(
                 new ClientwiseInventory(null, "H001", "RELIANCE", 100, bd("700000")));
         pledgeInventoryRepository.save(
@@ -70,8 +73,7 @@ class MarginCalculatorApplicationTests {
     @Test
     void testMarginCallStatus() {
         // totalMV = 1_000_000, Loan = 620_000 → equity = 380_000 → 38% (< 40% maintenance, >= 30% trigger)
-        clientRepository.save(new Client("MC001", "Margin Call Client",
-                bd("620000"), bd("50"), bd("40"), bd("30")));
+        clientRepository.save(client("MC001", "Margin Call Client", "620000"));
         clientwiseInventoryRepository.save(
                 new ClientwiseInventory(null, "MC001", "TCS", 200, bd("700000")));
         pledgeInventoryRepository.save(
@@ -93,8 +95,7 @@ class MarginCalculatorApplicationTests {
     @Test
     void testMarginCallExact() {
         // Design: totalMV = 1_000_000, loan = 650_000 → equity = 350_000 → 35% (30%<=35%<50%)
-        clientRepository.save(new Client("MC002", "Margin Call Exact",
-                bd("650000"), bd("50"), bd("40"), bd("30")));
+        clientRepository.save(client("MC002", "Margin Call Exact", "650000"));
         clientwiseInventoryRepository.save(
                 new ClientwiseInventory(null, "MC002", "RELIANCE", 100, bd("900000")));
         // No pledge
@@ -115,8 +116,7 @@ class MarginCalculatorApplicationTests {
     @Test
     void testForceSellStatus() {
         // Design: equity pct clearly below 30%
-        clientRepository.save(new Client("FS001", "Force Sell Client",
-                bd("900000"), bd("50"), bd("40"), bd("30")));
+        clientRepository.save(client("FS001", "Force Sell Client", "900000"));
         clientwiseInventoryRepository.save(
                 new ClientwiseInventory(null, "FS001", "WIPRO", 100, bd("500000")));
         pledgeInventoryRepository.save(
@@ -136,8 +136,8 @@ class MarginCalculatorApplicationTests {
 
     @Test
     void testAllClientsReport() {
-        clientRepository.save(new Client("A001", "Client A", bd("100000"), bd("50"), bd("40"), bd("30")));
-        clientRepository.save(new Client("A002", "Client B", bd("200000"), bd("50"), bd("40"), bd("30")));
+        clientRepository.save(client("A001", "Client A", "100000"));
+        clientRepository.save(client("A002", "Client B", "200000"));
         clientwiseInventoryRepository.save(new ClientwiseInventory(null, "A001", "RELIANCE", 100, bd("300000")));
         clientwiseInventoryRepository.save(new ClientwiseInventory(null, "A002", "TCS", 50, bd("150000")));
 
@@ -157,8 +157,7 @@ class MarginCalculatorApplicationTests {
 
     @Test
     void testShortfallIsZeroWhenHealthy() {
-        clientRepository.save(new Client("SF001", "No Shortfall Client",
-                bd("100000"), bd("50"), bd("40"), bd("30")));
+        clientRepository.save(client("SF001", "No Shortfall Client", "100000"));
         clientwiseInventoryRepository.save(
                 new ClientwiseInventory(null, "SF001", "TCS", 100, bd("800000")));
 
@@ -173,6 +172,56 @@ class MarginCalculatorApplicationTests {
         assertThatThrownBy(() -> marginCalculationService.generateReportForClient("NONEXISTENT"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("NONEXISTENT");
+    }
+
+    // -------------------------------------------------------------------------
+    // Monitoring snapshot
+    // -------------------------------------------------------------------------
+
+    @Test
+    void testMonitoringSnapshotIsPersisted() {
+        clientRepository.save(client("MS001", "Snapshot Client", "200000"));
+        clientwiseInventoryRepository.save(
+                new ClientwiseInventory(null, "MS001", "RELIANCE", 50, bd("500000")));
+
+        marginCalculationService.generateReportForClient("MS001");
+
+        var snapshots = marginCalculationService.getMonitoringTable();
+        assertThat(snapshots).hasSize(1);
+        assertThat(snapshots.get(0).getClientId()).isEqualTo("MS001");
+        assertThat(snapshots.get(0).getLastModifiedDate()).isNotNull();
+        assertThat(snapshots.get(0).getSn()).isEqualTo(1);
+    }
+
+    @Test
+    void testMonitoringSnapshotIsUpdatedOnRecalculation() {
+        clientRepository.save(client("MS002", "Upsert Client", "300000"));
+        clientwiseInventoryRepository.save(
+                new ClientwiseInventory(null, "MS002", "TCS", 100, bd("600000")));
+
+        marginCalculationService.generateReportForClient("MS002");
+        marginCalculationService.generateReportForClient("MS002");
+
+        // Should still be only one row (upsert semantics)
+        var snapshots = marginCalculationService.getMonitoringTable();
+        assertThat(snapshots).hasSize(1);
+        assertThat(snapshots.get(0).getStatusAction()).isNotNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /** Build a minimal client with default margin thresholds. */
+    private Client client(String id, String name, String loanOutstanding) {
+        Client c = new Client();
+        c.setClientId(id);
+        c.setClientName(name);
+        c.setLoanOutstanding(bd(loanOutstanding));
+        c.setInitialMarginPct(bd("50"));
+        c.setMaintenanceMarginPct(bd("40"));
+        c.setTriggerMarginPct(bd("30"));
+        return c;
     }
 
     private static BigDecimal bd(String val) {

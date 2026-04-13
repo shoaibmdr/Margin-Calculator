@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * Margin report for a single client.
@@ -25,6 +26,14 @@ import java.math.BigDecimal;
  *   <li>triggerMarginPct            – threshold below which FORCE_SELL is triggered</li>
  *   <li>shortfallAmount             – funds needed to reach maintenance margin (0 if HEALTHY)</li>
  *   <li>action                      – HEALTHY | MARGIN_CALL | FORCE_SELL</li>
+ *   <li>clientPan                   – client PAN number</li>
+ *   <li>clientMobileNumber          – client mobile number</li>
+ *   <li>approvedMarginTradingLimit  – sanctioned margin trading limit</li>
+ *   <li>approvedLoanLimit           – sanctioned loan limit</li>
+ *   <li>limitApprovedDate           – date when limit was approved</li>
+ *   <li>limitExpiryDate             – date when limit expires</li>
+ *   <li>daysRemainingBeforeExpiry   – days until expiry (negative if expired)</li>
+ *   <li>limitStatus                 – ACTIVE | EXPIRING_SOON | EXPIRED</li>
  * </ul>
  */
 @Data
@@ -50,4 +59,14 @@ public class MarginReportDTO {
 
     private BigDecimal shortfallAmount;
     private MarginAction action;
+
+    private String clientPan;
+    private String clientMobileNumber;
+
+    private BigDecimal approvedMarginTradingLimit;
+    private BigDecimal approvedLoanLimit;
+    private LocalDate limitApprovedDate;
+    private LocalDate limitExpiryDate;
+    private Long daysRemainingBeforeExpiry;
+    private LimitStatus limitStatus;
 }
