@@ -11,7 +11,7 @@ public enum MarginAction {
     HEALTHY,
 
     /**
-     * Trigger Margin % <= Current Equity % < Maintenance Margin % –
+     * Trigger Margin % <= Current Equity % < Initial Margin % –
      * client must deposit additional funds or securities to restore equity.
      */
     MARGIN_CALL,
