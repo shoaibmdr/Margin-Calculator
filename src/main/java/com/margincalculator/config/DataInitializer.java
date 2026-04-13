@@ -57,16 +57,52 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedClients() {
         // HEALTHY client – equity well above initial margin
-        clientRepository.save(new Client("C001", "Rajesh Kumar",
-                bd("500000"), bd("50"), bd("40"), bd("30")));
+        Client c1 = new Client();
+        c1.setClientId("C001");
+        c1.setClientName("Rajesh Kumar");
+        c1.setLoanOutstanding(bd("500000"));
+        c1.setInitialMarginPct(bd("50"));
+        c1.setMaintenanceMarginPct(bd("40"));
+        c1.setTriggerMarginPct(bd("30"));
+        c1.setClientPan("ABCPK1234R");
+        c1.setClientMobileNumber("9876543210");
+        c1.setApprovedMarginTradingLimit(bd("1000000"));
+        c1.setApprovedLoanLimit(bd("700000"));
+        c1.setLimitApprovedDate(LocalDate.of(2025, 1, 10));
+        c1.setLimitExpiryDate(LocalDate.of(2026, 1, 10));
+        clientRepository.save(c1);
 
         // MARGIN_CALL client – equity between trigger and initial margin
-        clientRepository.save(new Client("C002", "Priya Sharma",
-                bd("900000"), bd("50"), bd("40"), bd("30")));
+        Client c2 = new Client();
+        c2.setClientId("C002");
+        c2.setClientName("Priya Sharma");
+        c2.setLoanOutstanding(bd("900000"));
+        c2.setInitialMarginPct(bd("50"));
+        c2.setMaintenanceMarginPct(bd("40"));
+        c2.setTriggerMarginPct(bd("30"));
+        c2.setClientPan("BCDPS5678Q");
+        c2.setClientMobileNumber("9812345678");
+        c2.setApprovedMarginTradingLimit(bd("1500000"));
+        c2.setApprovedLoanLimit(bd("1000000"));
+        c2.setLimitApprovedDate(LocalDate.of(2025, 3, 15));
+        c2.setLimitExpiryDate(LocalDate.of(2026, 3, 15));
+        clientRepository.save(c2);
 
         // FORCE_SELL client – equity below trigger margin
-        clientRepository.save(new Client("C003", "Amit Singh",
-                bd("800000"), bd("50"), bd("40"), bd("30")));
+        Client c3 = new Client();
+        c3.setClientId("C003");
+        c3.setClientName("Amit Singh");
+        c3.setLoanOutstanding(bd("800000"));
+        c3.setInitialMarginPct(bd("50"));
+        c3.setMaintenanceMarginPct(bd("40"));
+        c3.setTriggerMarginPct(bd("30"));
+        c3.setClientPan("CDQAS9012S");
+        c3.setClientMobileNumber("9823456789");
+        c3.setApprovedMarginTradingLimit(bd("1200000"));
+        c3.setApprovedLoanLimit(bd("900000"));
+        c3.setLimitApprovedDate(LocalDate.of(2024, 6, 1));
+        c3.setLimitExpiryDate(LocalDate.of(2025, 6, 1));
+        clientRepository.save(c3);
     }
 
     private void seedClientwiseInventory() {
